@@ -1,3 +1,5 @@
+# backend/agent.py
+
 import requests
 import json
 import re
@@ -9,9 +11,6 @@ load_dotenv()
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 
-# =========================
-# LLM CALL
-# =========================
 def llm(prompt: str) -> str:
     try:
         response = requests.post(
@@ -47,9 +46,6 @@ def llm(prompt: str) -> str:
         return ""
 
 
-# =========================
-# JSON PARSER
-# =========================
 def extract_json(text):
     try:
         return json.loads(text)
@@ -65,42 +61,24 @@ def extract_json(text):
 
     return None
 
-import re
 
 def clean_text(text: str) -> str:
-    # remove weird unicode chars
     text = re.sub(r"[^\x00-\x7F]+", " ", text)
-
-    # fix broken words
     text = re.sub(r"\s+", " ", text)
-
-    # remove weird patterns like (cid:xxx)
     text = re.sub(r"\(cid:\d+\)", "", text)
-
     return text.strip()
-# =========================
-# MAIN AGENT
-# =========================
+
+
 def run_agent(resume, jd):
-    resume = resume[:2000]
-    jd = jd[:2000]
+    resume = clean_text(resume)[:2000]
+    jd = clean_text(jd)[:2000]
 
     prompt = f"""
 You are an AI hiring assistant.
 
-Analyze the Resume and Job Description.
-
 STRICT RULES:
 - Return ONLY valid JSON
 - No explanation text
-- No markdown
-- No extra words
-
-Skill scoring rules:
-- Strong project/internship → 7–9
-- Moderate → 5–6
-- Basic → 3–4
-- Missing → 0–2
 
 Resume:
 {resume}
@@ -132,15 +110,12 @@ Return JSON:
 """
 
     raw = llm(prompt)
-
-    print("\n=== RAW AI OUTPUT ===\n", raw)
-
     parsed = extract_json(raw)
 
     if parsed:
         return parsed
 
-    # fallback (rare now)
+    # fallback
     return {
         "match_score": "60%",
         "summary": raw[:300] if raw else "AI response issue",
