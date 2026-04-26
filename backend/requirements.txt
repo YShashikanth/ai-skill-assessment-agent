@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-pydantic
 requests
+python-dotenv
+pymupdf
 pdfplumber
-python-multipart
